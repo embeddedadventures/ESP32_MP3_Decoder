@@ -3,6 +3,8 @@
  *
  *  Created on: 13.04.2017
  *      Author: michaelboeckling
+ *	Modified by: Embedded Adventures
+ *	Modified on: 24.2.2017
  */
 
 #include "freertos/FreeRTOS.h"
@@ -18,6 +20,7 @@
 
 static xQueueHandle gpio_evt_queue = NULL;
 static TaskHandle_t *gpio_task;
+#define GPIO_BTN_PIN	GPIO_NUM_4	//Replace IO0 with IO4 for WRL-4001 board
 #define ESP_INTR_FLAG_DEFAULT 0
 
 /* gpio event handler */
@@ -41,7 +44,7 @@ void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth
     //interrupt of rising edge
     io_conf.intr_type = GPIO_PIN_INTR_POSEDGE;
     //bit mask of the pins, use GPIO0 here ("Boot" button)
-    io_conf.pin_bit_mask = (1 << GPIO_NUM_0);
+    io_conf.pin_bit_mask = (1 << GPIO_BTN_PIN);
     //set as input mode
     io_conf.mode = GPIO_MODE_INPUT;
     //disable pull-down mode
@@ -63,15 +66,15 @@ void controls_init(TaskFunction_t gpio_handler_task, const uint16_t usStackDepth
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
 
     // remove existing handler that may be present
-    gpio_isr_handler_remove(GPIO_NUM_0);
+    gpio_isr_handler_remove(GPIO_BTN_PIN);
 
     //hook isr handler for specific gpio pin
-    gpio_isr_handler_add(GPIO_NUM_0, gpio_isr_handler, (void*) GPIO_NUM_0);
+    gpio_isr_handler_add(GPIO_BTN_PIN, gpio_isr_handler, (void*) GPIO_BTN_PIN);
 }
 
 void controls_destroy()
 {
-    gpio_isr_handler_remove(GPIO_NUM_0);
+    gpio_isr_handler_remove(GPIO_BTN_PIN);
     vTaskDelete(gpio_task);
     vQueueDelete(gpio_evt_queue);
     // TODO: free gpio_handler_param_t params
